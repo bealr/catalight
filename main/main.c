@@ -7,6 +7,8 @@
 #include "buttons.h"
 #include "display.h"
 #include "defines.h"
+#include "wifi.h"
+#include "server.h"
 
 static void IRAM_ATTR encoder_timer_callback(void *arg)
 {
@@ -26,6 +28,29 @@ void encoder_timer_start(struct buttons_t *buttons)
     esp_timer_handle_t timer;
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 50));
+}
+
+static void IRAM_ATTR last_seen_timer_callback(void *arg)
+{
+    struct server_t *server = (struct server_t *) arg;
+    for (int i=0;i<20;i++) {
+        if (server->clients_last_seen[i] < 65000)
+            server->clients_last_seen[i] += 100;
+    }
+}
+
+void last_seen_timer_start(struct server_t *server)
+{
+    const esp_timer_create_args_t timer_args = {
+        .callback = &last_seen_timer_callback,
+        .arg = server,
+        .dispatch_method = ESP_TIMER_TASK, // ou ESP_TIMER_ISR
+        .name = "last_seen"
+    };
+
+    esp_timer_handle_t timer;
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 100000));
 }
 
 int process_rgb(int color, struct buttons_t *buttons, int light_id, struct lights_t *lights) {
@@ -60,7 +85,6 @@ int process_rgb(int color, struct buttons_t *buttons, int light_id, struct light
     if (save[color] != buttons->ec11[color].value) {
         save[color] = buttons->ec11[color].value;
 
-        printf("hoho : %d -- %d\n", lights->light[light_id].r, light_id);
         return 1;
     }
 
@@ -72,10 +96,13 @@ void app_main(void)
     ssd1306_handle_t dev;
     struct buttons_t *buttons;
     struct lights_t *lights;
+    struct server_t *server;
 
     dev = oled_init();
     buttons = buttons_init();
     lights = (struct lights_t *) malloc(sizeof(struct lights_t));
+    wifi_init();
+    server = server_init(1234);
 
     int force_refresh = 0;;
     int light_selected = 0;
@@ -83,17 +110,27 @@ void app_main(void)
     // 0: welcome
     // 1: select light
     // 2: rgb
+    // 3: device stat
 
     int i;
     vTaskDelay(pdMS_TO_TICKS(1000));
     for (i=0;i<5;i++) {
         buttons->ec11[i].value = 0;
         buttons->click[i] = 0;
+
+        lights->light[i].r = 0;
+        lights->light[i].g = 0;
+        lights->light[i].b = 0;
+        lights->light[i].w = 0;
+        lights->light[i].y = 0;
     }
 
     encoder_timer_start(buttons);
+    last_seen_timer_start(server);
 
     while (1) {
+
+        server_get(server, lights);
 
         if (current_page == 0) {
             dislay_welcome(dev);
@@ -119,6 +156,12 @@ void app_main(void)
                 buttons->click[0] = 0; // ACK
                 current_page = 2;
                 force_refresh = 1;
+
+                buttons->ec11[0].value = lights->light[light_selected].b;
+                buttons->ec11[1].value = lights->light[light_selected].g;
+                buttons->ec11[2].value = lights->light[light_selected].r;
+                buttons->ec11[3].value = lights->light[light_selected].y;
+                buttons->ec11[4].value = lights->light[light_selected].w;
             }
         }
 
@@ -131,7 +174,6 @@ void app_main(void)
                 process_rgb(4, buttons, light_selected, lights) + force_refresh) {
 
                     force_refresh = 0;
-                    printf("do refresh!! \n");
                     // do refresh !
                     dislay_rgb_ctrl(dev, light_selected, lights);
             }
@@ -142,6 +184,24 @@ void app_main(void)
                 force_refresh = 1;
 
                 buttons->ec11[2].value = light_selected;
+            }
+            
+            if (buttons->click[1]) {
+                buttons->click[1] = 0; // ACK
+                current_page = 3;
+                force_refresh = 1;
+
+                buttons->ec11[2].value = light_selected;
+            }
+        }
+
+        if (current_page == 3) {
+            dislay_devices(dev, server);
+
+            if (buttons->click[0]) {
+                buttons->click[0] = 0; // ACK
+                current_page = 2;
+                force_refresh = 1;
             }
         }
             

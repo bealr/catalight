@@ -92,3 +92,36 @@ void dislay_rgb_ctrl(ssd1306_handle_t dev, int light_selected, struct lights_t *
 
     ssd1306_refresh_gram(dev);
 }
+
+void dislay_devices(ssd1306_handle_t dev, struct server_t *server) {
+
+    char str[50];
+
+    int is_here;
+    int i;
+    int x, y;
+
+    ssd1306_clear_screen(dev, false);
+
+    x = 0;
+    y = 0;
+    for (i=0;i<20;i++) {
+
+        if (server->clients_last_seen[i] < 1000)
+            is_here = 1;
+        else
+            is_here = 0;
+
+        sprintf(str, "%d:%d", i, is_here);
+        ssd1306_draw_string(dev, x, y, (unsigned char *)str, 12, true);
+
+        y += 13;
+        if (y > (13*4)) {
+            y = 0;
+            x += 34;
+        }
+    }
+
+    ssd1306_refresh_gram(dev);
+    
+}
