@@ -41,6 +41,7 @@ void dislay_light_select(ssd1306_handle_t dev, int *light_selected, int force_re
     ssd1306_refresh_gram(dev);
 }
 
+#define DIV_ADAPT 3
 
 void dislay_rgb_ctrl(ssd1306_handle_t dev, int light_selected, struct lights_t *lights) {
     
@@ -57,35 +58,35 @@ void dislay_rgb_ctrl(ssd1306_handle_t dev, int light_selected, struct lights_t *
     ssd1306_draw_line(dev, 0, 13, 128, 12);
 
     padding = 10;
-    bar_size = lights->light[light_selected].r / 1;
+    bar_size = lights->light[light_selected].r / DIV_ADAPT;
 
-    printf("bar size r -- %d: %d\n", light_selected, lights->light[light_selected].r);
+    //printf("bar size r -- %d: %d\n", light_selected, lights->light[light_selected].r);
 
-    ssd1306_fill_rectangle(dev, padding, 20, padding+4, bar_size +20, 1);
+    ssd1306_fill_rectangle(dev, padding, 51-bar_size, padding+4, 51, 1);
     sprintf(str, "r");
     ssd1306_draw_string(dev, padding, 52, (unsigned char *)str, 12, true);
 
     padding += 24;
-    bar_size = lights->light[light_selected].g / 1;
-    ssd1306_fill_rectangle(dev, padding, 20, padding+4, bar_size +20, 1);
+    bar_size = lights->light[light_selected].g / DIV_ADAPT;
+    ssd1306_fill_rectangle(dev, padding, 51-bar_size, padding+4, 51, 1);
     sprintf(str, "g");
     ssd1306_draw_string(dev, padding, 52, (unsigned char *)str, 12, true);
 
     padding += 24;
-    bar_size = lights->light[light_selected].b / 1;
-    ssd1306_fill_rectangle(dev, padding, 20, padding+4, bar_size +20, 1);
+    bar_size = lights->light[light_selected].b / DIV_ADAPT;
+    ssd1306_fill_rectangle(dev, padding, 51-bar_size, padding+4, 51, 1);
     sprintf(str, "b");
     ssd1306_draw_string(dev, padding, 52, (unsigned char *)str, 12, true);
 
     padding += 24;
-    bar_size = lights->light[light_selected].w / 1;
-    ssd1306_fill_rectangle(dev, padding, 20, padding+4, bar_size +20, 1);
+    bar_size = lights->light[light_selected].w / DIV_ADAPT;
+    ssd1306_fill_rectangle(dev, padding, 51-bar_size, padding+4, 51, 1);
     sprintf(str, "w");
     ssd1306_draw_string(dev, padding, 52, (unsigned char *)str, 12, true);
 
     padding += 24;
-    bar_size = lights->light[light_selected].y / 1;
-    ssd1306_fill_rectangle(dev, padding, 20, padding+4, bar_size +20, 1);
+    bar_size = lights->light[light_selected].y / DIV_ADAPT;
+    ssd1306_fill_rectangle(dev, padding, 51-bar_size, padding+4, 51, 1);
     sprintf(str, "y");
     ssd1306_draw_string(dev, padding, 52, (unsigned char *)str, 12, true);
 

@@ -1,18 +1,39 @@
 #include <stdio.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_timer.h"
 
 #include "oled.h"
 #include "buttons.h"
 #include "display.h"
 #include "defines.h"
 
+static void IRAM_ATTR encoder_timer_callback(void *arg)
+{
+    struct buttons_t *buttons = (struct buttons_t *) arg;
+    button_read_all(buttons);
+}
+
+void encoder_timer_start(struct buttons_t *buttons)
+{
+    const esp_timer_create_args_t timer_args = {
+        .callback = &encoder_timer_callback,
+        .arg = buttons,
+        .dispatch_method = ESP_TIMER_TASK, // ou ESP_TIMER_ISR
+        .name = "encoder_poll"
+    };
+
+    esp_timer_handle_t timer;
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 50));
+}
+
 int process_rgb(int color, struct buttons_t *buttons, int light_id, struct lights_t *lights) {
 
     static int save[5];
 
     if (buttons->ec11[color].value < 0) buttons->ec11[color].value = 0;
-    if (buttons->ec11[color].value > 31) buttons->ec11[color].value = 31;
+    if (buttons->ec11[color].value > 254) buttons->ec11[color].value = 254;
 
 
     switch (color) {
@@ -70,9 +91,9 @@ void app_main(void)
         buttons->click[i] = 0;
     }
 
-    while (1) {
+    encoder_timer_start(buttons);
 
-        button_read_all(buttons);
+    while (1) {
 
         if (current_page == 0) {
             dislay_welcome(dev);
@@ -90,7 +111,7 @@ void app_main(void)
             if (buttons->ec11[0].value < 0) buttons->ec11[0].value = 0;
             if (buttons->ec11[0].value > 20) buttons->ec11[0].value = 20;
 
-            light_selected = buttons->ec11[0].value;
+            light_selected = buttons->ec11[2].value;
 
             dislay_light_select(dev, &light_selected, force_refresh);
             force_refresh = 0;
@@ -120,7 +141,7 @@ void app_main(void)
                 current_page = 1;
                 force_refresh = 1;
 
-                buttons->ec11[0].value = light_selected;
+                buttons->ec11[2].value = light_selected;
             }
         }
             
