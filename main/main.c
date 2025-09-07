@@ -32,18 +32,18 @@ void encoder_timer_start(struct buttons_t *buttons)
 
 static void IRAM_ATTR last_seen_timer_callback(void *arg)
 {
-    struct server_t *server = (struct server_t *) arg;
+    struct lights_t *lights = (struct lights_t *) arg;
     for (int i=0;i<20;i++) {
-        if (server->clients_last_seen[i] < 65000)
-            server->clients_last_seen[i] += 100;
+        if (lights->clients_last_seen[i] < 65000)
+            lights->clients_last_seen[i] += 100;
     }
 }
 
-void last_seen_timer_start(struct server_t *server)
+void last_seen_timer_start(struct lights_t *lights)
 {
     const esp_timer_create_args_t timer_args = {
         .callback = &last_seen_timer_callback,
-        .arg = server,
+        .arg = lights,
         .dispatch_method = ESP_TIMER_TASK, // ou ESP_TIMER_ISR
         .name = "last_seen"
     };
@@ -104,8 +104,8 @@ void app_main(void)
     wifi_init();
     server = server_init(1234);
 
-    int force_refresh = 0;;
-    int light_selected = 0;
+    int force_refresh = 1;
+    int light_selected = 1;
     int current_page = 0;
     // 0: welcome
     // 1: select light
@@ -118,22 +118,32 @@ void app_main(void)
         buttons->ec11[i].value = 0;
         buttons->click[i] = 0;
 
+    }
+
+    for (i=0;i<20;i++) {
         lights->light[i].r = 0;
         lights->light[i].g = 0;
         lights->light[i].b = 0;
         lights->light[i].w = 0;
         lights->light[i].y = 0;
+
+        lights->rssi[i] = 0;
+        lights->clients_last_seen[i] = 65000;
     }
 
     encoder_timer_start(buttons);
-    last_seen_timer_start(server);
+    last_seen_timer_start(lights);
 
     while (1) {
 
         server_get(server, lights);
 
         if (current_page == 0) {
-            dislay_welcome(dev);
+
+            dislay_welcome(dev, force_refresh);
+            force_refresh = 0;
+            buttons->click[1] = 0;
+
             if (buttons->click[0]) {
                 buttons->click[0] = 0; // ACK
                 current_page = 1;
@@ -145,12 +155,13 @@ void app_main(void)
 
         if (current_page == 1) {
 
-            if (buttons->ec11[0].value < 0) buttons->ec11[0].value = 0;
-            if (buttons->ec11[0].value > 20) buttons->ec11[0].value = 20;
+            if (buttons->ec11[2].value < 1) buttons->ec11[2].value = 1;
+            if (buttons->ec11[2].value > 19) buttons->ec11[2].value = 19;
 
             light_selected = buttons->ec11[2].value;
+            buttons->click[1] = 0;
 
-            dislay_light_select(dev, &light_selected, force_refresh);
+            dislay_light_select(dev, &light_selected, lights, force_refresh);
             force_refresh = 0;
             if (buttons->click[0]) {
                 buttons->click[0] = 0; // ACK
@@ -185,6 +196,25 @@ void app_main(void)
 
                 buttons->ec11[2].value = light_selected;
             }
+
+            if (buttons->click[3]) {
+                buttons->click[3] = 0; // ACK
+
+                for (i=0;i<5;i++)
+                    buttons->ec11[i].value = 254;
+
+                force_refresh = 1;
+            }
+
+            if (buttons->click[4]) {
+                buttons->click[4] = 0; // ACK
+
+                
+                for (i=0;i<5;i++)
+                    buttons->ec11[i].value = 0;
+
+                force_refresh = 1;
+            }
             
             if (buttons->click[1]) {
                 buttons->click[1] = 0; // ACK
@@ -196,7 +226,8 @@ void app_main(void)
         }
 
         if (current_page == 3) {
-            dislay_devices(dev, server);
+            dislay_devices(dev, lights);
+            buttons->click[1] = 0;
 
             if (buttons->click[0]) {
                 buttons->click[0] = 0; // ACK

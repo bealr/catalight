@@ -24,9 +24,6 @@ struct server_t *server_init(int port) {
     int flags = fcntl(server->sock, F_GETFL, 0);
     fcntl(server->sock, F_SETFL, flags | O_NONBLOCK);
 
-    for (i=0;i<20;i++)
-        server->clients_last_seen[i] = 65000;
-
     return server;
 }
 
@@ -57,7 +54,7 @@ void server_send(struct server_message_req_t *server_message_req, int device_id)
     close(sock);
 }
 
-int server_get(struct server_t *server, struct lights_t *light) {
+int server_get(struct server_t *server, struct lights_t *lights) {
 
     char rx_buffer[128];
     struct sockaddr_in source_addr;
@@ -74,15 +71,17 @@ int server_get(struct server_t *server, struct lights_t *light) {
     printf("UDP from: %d\n", msg_req.device_id);
 
     if (msg_req.device_id > 0 && msg_req.device_id < 20) {
-        server->clients_last_seen[msg_req.device_id] = 0;
+        lights->clients_last_seen[msg_req.device_id] = 0;
     }
+
+    lights->rssi[msg_req.device_id] = msg_req.rssi;
         
     int dev_id = msg_req.device_id;
-    msg_req.r = light->light[msg_req.device_id-1].r;
-    msg_req.g = light->light[msg_req.device_id-1].g;
-    msg_req.b = light->light[msg_req.device_id-1].b;
-    msg_req.w = light->light[msg_req.device_id-1].w;
-    msg_req.y = light->light[msg_req.device_id-1].y;
+    msg_req.r = lights->light[msg_req.device_id].r;
+    msg_req.g = lights->light[msg_req.device_id].g;
+    msg_req.b = lights->light[msg_req.device_id].b;
+    msg_req.w = lights->light[msg_req.device_id].w;
+    msg_req.y = lights->light[msg_req.device_id].y;
     printf("msg to lampion %d : r:%d\n", msg_req.device_id, msg_req.r);
     msg_req.device_id = 0;
 

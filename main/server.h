@@ -17,7 +17,6 @@ struct server_message_req_t {
 struct server_t {
     int sock;
     struct server_message_req_t clients[20];
-    unsigned int clients_last_seen[20];
 };
 
 void server_send(struct server_message_req_t *server_message_req, int device_id);

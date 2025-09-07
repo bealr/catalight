@@ -3,8 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-
-#include "driver/i2c.h"
+#include <driver/i2c_master.h>
 #include "ssd1306.h"
 #include "string.h" // for memset
 
@@ -18,6 +17,7 @@ typedef struct {
     i2c_port_t bus;
     uint16_t dev_addr;
     uint8_t s_chDisplayBuffer[128][8];
+    i2c_master_dev_handle_t dev_handle;
 } ssd1306_dev_t;
 
 static uint32_t _pow(uint8_t m, uint8_t n)
@@ -33,7 +33,14 @@ static esp_err_t ssd1306_write_data(ssd1306_handle_t dev, const uint8_t *const d
 {
     ssd1306_dev_t *device = (ssd1306_dev_t *) dev;
     esp_err_t ret;
+    ret = 0;
 
+    uint8_t buf[data_len + 1];
+    buf[0] = SSD1306_WRITE_DAT;   // préfixe commande/données
+    memcpy(&buf[1], data, data_len);
+
+    i2c_master_transmit(device->dev_handle, buf, data_len+1, -1);
+    /*
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     ret = i2c_master_start(cmd);
     assert(ESP_OK == ret);
@@ -47,6 +54,7 @@ static esp_err_t ssd1306_write_data(ssd1306_handle_t dev, const uint8_t *const d
     assert(ESP_OK == ret);
     ret = i2c_master_cmd_begin(device->bus, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
+    */
 
     return ret;
 }
@@ -55,7 +63,15 @@ static esp_err_t ssd1306_write_cmd(ssd1306_handle_t dev, const uint8_t *const da
 {
     ssd1306_dev_t *device = (ssd1306_dev_t *) dev;
     esp_err_t ret;
+    ret = 0;
 
+    uint8_t buf[data_len + 1];
+    buf[0] = SSD1306_WRITE_CMD;   // préfixe commande/données
+    memcpy(&buf[1], data, data_len);
+
+    i2c_master_transmit(device->dev_handle, buf, data_len+1, -1);
+
+    /*
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
     ret = i2c_master_start(cmd);
     assert(ESP_OK == ret);
@@ -69,6 +85,7 @@ static esp_err_t ssd1306_write_cmd(ssd1306_handle_t dev, const uint8_t *const da
     assert(ESP_OK == ret);
     ret = i2c_master_cmd_begin(device->bus, cmd, 1000 / portTICK_PERIOD_MS);
     i2c_cmd_link_delete(cmd);
+    */
 
     return ret;
 }
@@ -336,11 +353,10 @@ esp_err_t ssd1306_init(ssd1306_handle_t dev)
     return ret;
 }
 
-ssd1306_handle_t ssd1306_create(i2c_port_t bus, uint16_t dev_addr)
+ssd1306_handle_t ssd1306_create(i2c_master_dev_handle_t dev_handle)
 {
     ssd1306_dev_t *dev = (ssd1306_dev_t *) calloc(1, sizeof(ssd1306_dev_t));
-    dev->bus = bus;
-    dev->dev_addr = dev_addr << 1;
+    dev->dev_handle = dev_handle;
     ssd1306_init((ssd1306_handle_t) dev);
     return (ssd1306_handle_t) dev;
 }

@@ -16,7 +16,7 @@ extern "C"
 {
 #endif
 
-#include "driver/i2c.h"
+#include <driver/i2c_master.h>
 #include "stdint.h"
 #include "ssd1306_fonts.h"
 
@@ -50,7 +50,7 @@ esp_err_t ssd1306_init(ssd1306_handle_t dev);
  * @return
  *     - device object handle of ssd1306
  */
-ssd1306_handle_t ssd1306_create(i2c_port_t port, uint16_t dev_addr)
+ssd1306_handle_t ssd1306_create(i2c_master_dev_handle_t dev_handle)
 __attribute__((deprecated("This driver is DEPRECATED. Please use updated SSD1306 driver from ESP-IDF.")));
 
 /**
