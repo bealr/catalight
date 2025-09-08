@@ -12,7 +12,6 @@ void gpio_conf_input(int gpio) {
 struct buttons_t *buttons_init() {
 
     int i;
-
     struct buttons_t *buttons = (struct buttons_t *) malloc(sizeof(struct buttons_t));
 
     // buttons
@@ -21,6 +20,11 @@ struct buttons_t *buttons_init() {
     gpio_conf_input(5);
     gpio_conf_input(17);
     gpio_conf_input(16);
+    buttons->button_io[2] = 19;
+    buttons->button_io[1] = 18;
+    buttons->button_io[0] = 5;
+    buttons->button_io[4] = 17;
+    buttons->button_io[3] = 16;
 
     // coders
     gpio_conf_input(34);
@@ -33,11 +37,6 @@ struct buttons_t *buttons_init() {
     gpio_conf_input(14);
     gpio_conf_input(12);
     gpio_conf_input(13);
-
-    for (i=0;i<5;i++) {
-        buttons->ec11[i].value = 0;
-        buttons->click[i] = 0;
-    }
 
     buttons->ec11[0].pinA = 34;
     buttons->ec11[0].pinB = 35;
@@ -54,6 +53,12 @@ struct buttons_t *buttons_init() {
     buttons->ec11[4].pinA = 12;
     buttons->ec11[4].pinB = 13;
 
+    // Reset
+    for (i=0;i<5;i++) {
+        buttons->ec11[i].value = 0;
+        buttons->click[i] = 0;
+    }
+
     return buttons;
 }
 
@@ -69,6 +74,7 @@ struct ec11_t *enc = &buttons->ec11[n];
 
     // Détection uniquement au retour sur "00"
     if (curr_state == 0b00 && enc->last_state != 0b00) {
+        printf("move on pot %d\n", n);
         // Si la transition précédente était 10 → cran dans un sens
         if (enc->last_state == 0b10) {
             result = -1;   // horaire
@@ -94,57 +100,14 @@ void button_read_all(struct buttons_t *buttons) {
 
         if (buttons->ec11[i].value < 0) buttons->ec11[i].value = 0;
         if (buttons->ec11[i].value > 93) buttons->ec11[i].value = 93;
+
+        val = gpio_get_level(buttons->button_io[i]);
+        if (val == 0) {
+
+            printf("button %d DOWN\n", i);
+            while(gpio_get_level(buttons->button_io[i]) == 0) vTaskDelay(pdMS_TO_TICKS(30));
+            buttons->click[i] = 1;
+            printf("button %d UP\n", i);
+        }
     }
-
-    i = 0;
-    val = gpio_get_level(19);
-    if (val == 0) {
-
-        printf("button %d DOWN\n", i);
-        while(gpio_get_level(19) == 0) vTaskDelay(pdMS_TO_TICKS(30));
-        buttons->click[i] = 1;
-        printf("button %d UP\n", i);
-    }
-    i++;
-    
-    val = gpio_get_level(18);
-    if (val == 0) {
-
-        printf("button %d DOWN\n", i);
-        while(gpio_get_level(18) == 0) vTaskDelay(pdMS_TO_TICKS(30));
-        buttons->click[i] = 1;
-        printf("button %d UP\n", i);
-    }
-    i++;
-
-    val = gpio_get_level(5);
-    if (val == 0) {
-
-        printf("button %d DOWN\n", i);
-        while(gpio_get_level(5) == 0) vTaskDelay(pdMS_TO_TICKS(30));
-        buttons->click[i] = 1;
-        printf("button %d UP\n", i);
-    }
-    i++;
-
-    val = gpio_get_level(17);
-    if (val == 0) {
-
-        printf("button %d DOWN\n", i);
-        while(gpio_get_level(17) == 0) vTaskDelay(pdMS_TO_TICKS(30));
-        buttons->click[i] = 1;
-        printf("button %d UP\n", i);
-    }
-    i++;
-
-    val = gpio_get_level(16);
-    if (val == 0) {
-
-        printf("button %d DOWN\n", i);
-        while(gpio_get_level(16) == 0) vTaskDelay(pdMS_TO_TICKS(30));
-        buttons->click[i] = 1;
-        printf("button %d UP\n", i);
-    }
-    i++;
-
 }

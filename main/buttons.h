@@ -16,6 +16,7 @@ struct ec11_t {
 struct buttons_t {
 
     struct ec11_t ec11[5];
+    int button_io[5];
     int click[5];
 };
 

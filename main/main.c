@@ -2,6 +2,7 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_timer.h"
+#include "esp_task_wdt.h"
 
 #include "oled.h"
 #include "buttons.h"
@@ -27,7 +28,7 @@ void encoder_timer_start(struct buttons_t *buttons)
 
     esp_timer_handle_t timer;
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
-    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 50));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 500));
 }
 
 static void IRAM_ATTR last_seen_timer_callback(void *arg)
@@ -97,6 +98,8 @@ void app_main(void)
     struct buttons_t *buttons;
     struct lights_t *lights;
     struct server_t *server;
+
+    esp_task_wdt_deinit();
 
     dev = oled_init();
     buttons = buttons_init();
@@ -217,6 +220,7 @@ void app_main(void)
             }
             
             if (buttons->click[1]) {
+                printf("click in of devices\n");
                 buttons->click[1] = 0; // ACK
                 current_page = 3;
                 force_refresh = 1;
@@ -230,6 +234,7 @@ void app_main(void)
             buttons->click[1] = 0;
 
             if (buttons->click[0]) {
+                printf("click out of devices\n");
                 buttons->click[0] = 0; // ACK
                 current_page = 2;
                 force_refresh = 1;
