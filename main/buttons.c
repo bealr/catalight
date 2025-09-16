@@ -27,8 +27,8 @@ struct buttons_t *buttons_init() {
     buttons->button_io[3] = 16;
 
     // coders
-    gpio_conf_input(34);
-    gpio_conf_input(35);
+    gpio_conf_input(0);
+    gpio_conf_input(4);
     gpio_conf_input(32);
     gpio_conf_input(33);
     gpio_conf_input(25);
@@ -38,20 +38,20 @@ struct buttons_t *buttons_init() {
     gpio_conf_input(12);
     gpio_conf_input(13);
 
-    buttons->ec11[0].pinA = 34;
-    buttons->ec11[0].pinB = 35;
+    buttons->ec11[0].pinA = 0;
+    buttons->ec11[0].pinB = 4;
 
     buttons->ec11[1].pinA = 32;
     buttons->ec11[1].pinB = 33;
 
-    buttons->ec11[2].pinA = 25;
-    buttons->ec11[2].pinB = 26;
+    buttons->ec11[2].pinA = 26;
+    buttons->ec11[2].pinB = 25;
 
     buttons->ec11[3].pinA = 27;
     buttons->ec11[3].pinB = 14;
 
-    buttons->ec11[4].pinA = 12;
-    buttons->ec11[4].pinB = 13;
+    buttons->ec11[4].pinA = 13;
+    buttons->ec11[4].pinB = 12;
 
     // Reset
     for (i=0;i<5;i++) {
@@ -71,17 +71,18 @@ struct ec11_t *enc = &buttons->ec11[n];
     uint8_t curr_state = (state_a << 1) | state_b;
 
     int result = 0;
+    int cst = 1;
 
     // Détection uniquement au retour sur "00"
     if (curr_state == 0b00 && enc->last_state != 0b00) {
         printf("move on pot %d\n", n);
         // Si la transition précédente était 10 → cran dans un sens
         if (enc->last_state == 0b10) {
-            result = -1;   // horaire
+            result = -cst;   // horaire
         }
         // Si c'était 01 → cran dans l'autre sens
         else if (enc->last_state == 0b01) {
-            result = +1;   // antihoraire
+            result = +cst;   // antihoraire
         }
     }
 
@@ -96,7 +97,7 @@ void button_read_all(struct buttons_t *buttons) {
     int val;
 
     for (i=0;i<5;i++) {
-        buttons->ec11[i].value += button_rot_get(buttons, i);
+        buttons->ec11[i].value += button_rot_get(buttons, i)*4;
 
         if (buttons->ec11[i].value < 0) buttons->ec11[i].value = 0;
         if (buttons->ec11[i].value > 93) buttons->ec11[i].value = 93;

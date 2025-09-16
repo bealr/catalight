@@ -189,8 +189,8 @@ void dislay_devices(ssd1306_handle_t dev, struct lights_t *lights) {
         else
             is_here = 0;
 
-        sprintf(str, "%d:%d", i, is_here);
-        ssd1306_draw_string(dev, x, y, (unsigned char *)str, 12, true);
+        sprintf(str, "%d", i);
+        ssd1306_draw_string(dev, x, y, (unsigned char *)str, 12, !is_here);
 
         y += 13;
         if (y > (13*4)) {

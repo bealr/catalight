@@ -58,33 +58,37 @@ int process_rgb(int color, struct buttons_t *buttons, int light_id, struct light
 
     static int save[5];
 
-    if (buttons->ec11[color].value < 0) buttons->ec11[color].value = 0;
-    if (buttons->ec11[color].value > 254) buttons->ec11[color].value = 254;
+    int value = buttons->ec11[color].value;
+
+    if (value < 0) value = 0;
+    if (value > (254)) value = (254);
+
 
 
     switch (color) {
         case 2:
-            lights->light[light_id].r = buttons->ec11[color].value;
+            lights->light[light_id].r = value;
+            printf("the value  : %d\n", value);
             break;
         case 1:
-            lights->light[light_id].g = buttons->ec11[color].value;
+            lights->light[light_id].g = value;
             break;
         case 0:
-            lights->light[light_id].b = buttons->ec11[color].value;
+            lights->light[light_id].b = value;
             break;
         case 4:
-            lights->light[light_id].w = buttons->ec11[color].value;
+            lights->light[light_id].w = value;
             break;
         case 3:
-            lights->light[light_id].y = buttons->ec11[color].value;
+            lights->light[light_id].y = value;
             break;
 
         default:
             (void) lights;
     }
 
-    if (save[color] != buttons->ec11[color].value) {
-        save[color] = buttons->ec11[color].value;
+    if (save[color] != value) {
+        save[color] = value;
 
         return 1;
     }
@@ -116,7 +120,7 @@ void app_main(void)
     // 3: device stat
 
     int i;
-    vTaskDelay(pdMS_TO_TICKS(1000));
+    //vTaskDelay(pdMS_TO_TICKS(1000));
     for (i=0;i<5;i++) {
         buttons->ec11[i].value = 0;
         buttons->click[i] = 0;
@@ -125,7 +129,7 @@ void app_main(void)
 
     for (i=0;i<20;i++) {
         lights->light[i].r = 0;
-        lights->light[i].g = 0;
+        lights->light[i].g = 10;
         lights->light[i].b = 0;
         lights->light[i].w = 0;
         lights->light[i].y = 0;
@@ -159,9 +163,9 @@ void app_main(void)
         if (current_page == 1) {
 
             if (buttons->ec11[2].value < 1) buttons->ec11[2].value = 1;
-            if (buttons->ec11[2].value > 19) buttons->ec11[2].value = 19;
+            if (buttons->ec11[2].value > 19*4) buttons->ec11[2].value = 19*4;
 
-            light_selected = buttons->ec11[2].value;
+            light_selected = buttons->ec11[2].value/4 +1;
             buttons->click[1] = 0;
 
             dislay_light_select(dev, &light_selected, lights, force_refresh);
@@ -197,7 +201,7 @@ void app_main(void)
                 current_page = 1;
                 force_refresh = 1;
 
-                buttons->ec11[2].value = light_selected;
+                buttons->ec11[2].value = light_selected*4-1;
             }
 
             if (buttons->click[3]) {
@@ -220,22 +224,19 @@ void app_main(void)
             }
             
             if (buttons->click[1]) {
-                printf("click in of devices\n");
                 buttons->click[1] = 0; // ACK
                 current_page = 3;
                 force_refresh = 1;
 
-                buttons->ec11[2].value = light_selected;
+                buttons->ec11[2].value = light_selected*4;
             }
         }
 
         if (current_page == 3) {
             dislay_devices(dev, lights);
-            buttons->click[1] = 0;
 
-            if (buttons->click[0]) {
-                printf("click out of devices\n");
-                buttons->click[0] = 0; // ACK
+            if (buttons->click[1]) {
+                buttons->click[1] = 0; // ACK
                 current_page = 2;
                 force_refresh = 1;
             }
