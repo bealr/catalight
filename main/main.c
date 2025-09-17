@@ -151,13 +151,15 @@ void app_main(void)
             force_refresh = 0;
             buttons->click[1] = 0;
 
-            if (buttons->click[0]) {
+            vTaskDelay(pdMS_TO_TICKS(2000));
+
+            //if (buttons->click[0]) {
                 buttons->click[0] = 0; // ACK
                 current_page = 1;
                 light_selected = 0;
                 buttons->ec11[0].value = 0;
                 force_refresh = 1;
-            }
+            //}
         }
 
         if (current_page == 1) {
@@ -204,8 +206,8 @@ void app_main(void)
                 buttons->ec11[2].value = light_selected*4-1;
             }
 
-            if (buttons->click[3]) {
-                buttons->click[3] = 0; // ACK
+            if (buttons->click[4]) {
+                buttons->click[4] = 0; // ACK
 
                 for (i=0;i<5;i++)
                     buttons->ec11[i].value = 254;
@@ -213,8 +215,8 @@ void app_main(void)
                 force_refresh = 1;
             }
 
-            if (buttons->click[4]) {
-                buttons->click[4] = 0; // ACK
+            if (buttons->click[3]) {
+                buttons->click[3] = 0; // ACK
 
                 
                 for (i=0;i<5;i++)
@@ -227,8 +229,6 @@ void app_main(void)
                 buttons->click[1] = 0; // ACK
                 current_page = 3;
                 force_refresh = 1;
-
-                buttons->ec11[2].value = light_selected*4;
             }
         }
 
