@@ -10,6 +10,7 @@
 #include "defines.h"
 #include "wifi.h"
 #include "server.h"
+#include "adc.h"
 
 static void IRAM_ATTR encoder_timer_callback(void *arg)
 {
@@ -52,6 +53,29 @@ void last_seen_timer_start(struct lights_t *lights)
     esp_timer_handle_t timer;
     ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
     ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 100000));
+}
+
+static void IRAM_ATTR voltage_timer_callback(void *arg)
+{
+    struct adc_t *adc = (struct adc_t *) arg;
+
+    get_batt_voltage(adc);
+
+    printf("the adc value : %d\n", adc->batt_v);
+}
+
+void voltage_timer_start(struct adc_t *adc)
+{
+    const esp_timer_create_args_t timer_args = {
+        .callback = &voltage_timer_callback,
+        .arg = adc,
+        .dispatch_method = ESP_TIMER_TASK, // ou ESP_TIMER_ISR
+        .name = "last_seen"
+    };
+
+    esp_timer_handle_t timer;
+    ESP_ERROR_CHECK(esp_timer_create(&timer_args, &timer));
+    ESP_ERROR_CHECK(esp_timer_start_periodic(timer, 500000));
 }
 
 int process_rgb(int color, struct buttons_t *buttons, int light_id, struct lights_t *lights) {
@@ -102,6 +126,7 @@ void app_main(void)
     struct buttons_t *buttons;
     struct lights_t *lights;
     struct server_t *server;
+    struct adc_t *adc;
 
     esp_task_wdt_deinit();
 
@@ -110,6 +135,7 @@ void app_main(void)
     lights = (struct lights_t *) malloc(sizeof(struct lights_t));
     wifi_init();
     server = server_init(1234);
+    adc = adc_init();
 
     int force_refresh = 1;
     int light_selected = 1;
@@ -140,6 +166,7 @@ void app_main(void)
 
     encoder_timer_start(buttons);
     last_seen_timer_start(lights);
+    voltage_timer_start(adc);
 
     while (1) {
 
