@@ -12,6 +12,7 @@ struct server_message_req_t {
     uint8_t b;
     uint8_t w;
     uint8_t y;
+    uint8_t voltage;
 };
 
 struct server_t {

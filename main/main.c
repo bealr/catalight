@@ -60,8 +60,6 @@ static void IRAM_ATTR voltage_timer_callback(void *arg)
     struct adc_t *adc = (struct adc_t *) arg;
 
     get_batt_voltage(adc);
-
-    printf("the adc value : %d\n", adc->batt_v);
 }
 
 void voltage_timer_start(struct adc_t *adc)
@@ -92,7 +90,6 @@ int process_rgb(int color, struct buttons_t *buttons, int light_id, struct light
     switch (color) {
         case 2:
             lights->light[light_id].r = value;
-            printf("the value  : %d\n", value);
             break;
         case 1:
             lights->light[light_id].g = value;
@@ -161,8 +158,13 @@ void app_main(void)
         lights->light[i].y = 0;
 
         lights->rssi[i] = 0;
+        lights->battery_percent[i] = 0;
         lights->clients_last_seen[i] = 65000;
     }
+
+    get_batt_voltage(adc);
+    for (i=1;i<10;i++)
+        adc->batt_v_tab[i] = adc->batt_v_tab[0];
 
     encoder_timer_start(buttons);
     last_seen_timer_start(lights);
@@ -222,7 +224,7 @@ void app_main(void)
 
                     force_refresh = 0;
                     // do refresh !
-                    dislay_rgb_ctrl(dev, light_selected, lights);
+                    dislay_rgb_ctrl(dev, light_selected, lights, adc);
             }
 
             if (buttons->click[0]) {

@@ -16,6 +16,7 @@ struct lights_t {
     struct ligh_t light[20];
     int rssi[20];
     unsigned int clients_last_seen[20];
+    uint8_t battery_percent[20];
 };
 
 #endif

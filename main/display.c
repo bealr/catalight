@@ -120,7 +120,7 @@ void dislay_light_select(ssd1306_handle_t dev, int *light_selected, struct light
 
 #define DIV_ADAPT 3
 
-void dislay_rgb_ctrl(ssd1306_handle_t dev, int light_selected, struct lights_t *lights) {
+void dislay_rgb_ctrl(ssd1306_handle_t dev, int light_selected, struct lights_t *lights, struct adc_t *adc) {
     
     char str[50];
 
@@ -129,7 +129,7 @@ void dislay_rgb_ctrl(ssd1306_handle_t dev, int light_selected, struct lights_t *
 
     ssd1306_clear_screen(dev, false);
 
-    sprintf(str, "Light : %d", light_selected);
+    sprintf(str, "Light %d | %d%% | %d%%", light_selected, adc->percent, lights->battery_percent[light_selected]);
     ssd1306_draw_string(dev, 0, 0, (unsigned char *)str, 12, true);
 
     ssd1306_draw_line(dev, 0, 13, 128, 12);

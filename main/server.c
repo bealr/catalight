@@ -75,6 +75,7 @@ int server_get(struct server_t *server, struct lights_t *lights) {
     }
 
     lights->rssi[msg_req.device_id] = msg_req.rssi;
+    lights->battery_percent[msg_req.device_id] = msg_req.voltage;
         
     int dev_id = msg_req.device_id;
     msg_req.r = lights->light[msg_req.device_id].r;
